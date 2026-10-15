@@ -1,0 +1,45 @@
+{
+  "model_name": "PlacementPredict-HistGradientBoosting-Calibrated",
+  "version": "1.0.0",
+  "framework": "scikit-learn 1.9.1",
+  "pipeline_steps": [
+    "MedianImputer+MissingIndicator",
+    "StandardScaler",
+    "OneHotEncoder",
+    "ClusterFeatureAdder",
+    "PlattCalibratedClassifier"
+  ],
+  "input_features": [
+    "cgpa",
+    "iq",
+    "academic_percentage_10th",
+    "academic_percentage_12th",
+    "internships_count",
+    "projects_count",
+    "coding_skills_score",
+    "hackathons_attended",
+    "soft_skills_score",
+    "backlogs",
+    "stream",
+    "college_tier",
+    "gender",
+    "extracurricular_activities"
+  ],
+  "metrics": {
+    "accuracy": 0.7916,
+    "precision": 0.6554,
+    "recall": 0.4027,
+    "f1_score": 0.4989,
+    "specificity": 0.9265,
+    "confusion_matrix": {
+      "tn": 5159,
+      "fp": 409,
+      "fn": 1154,
+      "tp": 778
+    },
+    "roc_auc": 0.802,
+    "pr_auc": 0.6029,
+    "brier_score": 0.146
+  },
+  "training_duration_seconds": 35.47
+}

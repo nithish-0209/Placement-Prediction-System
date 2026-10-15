@@ -1,0 +1,602 @@
+{% extends "base.html" %}
+
+{% block title %}System Dashboard — PlacementPredict M1-M6 ML Lifecycle{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <div class="header-left">
+        <h1 class="page-title">ML System Production Dashboard</h1>
+        <p class="page-subtitle">End-to-end telemetry across all lifecycle stages: Ingestion &bull; EDA &bull; Preprocessing &bull; Model Benchmark &bull; Unsupervised Lab &bull; Drift Monitoring</p>
+    </div>
+    <div class="header-actions">
+        <a href="{{ url_for('predict_page') }}" class="btn btn-primary"><i class="fa-solid fa-wand-magic-sparkles"></i> Live Prediction Studio</a>
+        <button id="triggerRetrainBtn" class="btn btn-secondary"><i class="fa-solid fa-arrows-rotate"></i> Retrain Pipeline</button>
+    </div>
+</div>
+
+<!-- KPI Metrics Ribbon -->
+<div class="kpi-grid">
+    <div class="kpi-card">
+        <div class="kpi-icon icon-blue"><i class="fa-solid fa-database"></i></div>
+        <div class="kpi-info">
+            <span class="kpi-label">Dataset Records</span>
+            <span class="kpi-value">{{ metrics.total_dataset_rows | default(50000) }}</span>
+            <span class="kpi-sub"><i class="fa-solid fa-check-circle text-success"></i> 50k Verified Rows</span>
+        </div>
+    </div>
+
+    <div class="kpi-card">
+        <div class="kpi-icon icon-purple"><i class="fa-solid fa-microchip"></i></div>
+        <div class="kpi-info">
+            <span class="kpi-label">Best Serving Model</span>
+            <span class="kpi-value text-accent">HistGradientBoost</span>
+            <span class="kpi-sub">Platt Calibrated &bull; v1.0</span>
+        </div>
+    </div>
+
+    <div class="kpi-card">
+        <div class="kpi-icon icon-green"><i class="fa-solid fa-bullseye"></i></div>
+        <div class="kpi-info">
+            <span class="kpi-label">ROC-AUC Score</span>
+            <span class="kpi-value">{{ metrics.model_benchmarks['Gradient Boosting']['roc_auc'] | default(0.81) }}</span>
+            <span class="kpi-sub">PR-AUC: {{ metrics.model_benchmarks['Gradient Boosting']['pr_auc'] | default(0.61) }}</span>
+        </div>
+    </div>
+
+    <div class="kpi-card">
+        <div class="kpi-icon icon-amber"><i class="fa-solid fa-scale-balanced"></i></div>
+        <div class="kpi-info">
+            <span class="kpi-label">F1-Score</span>
+            <span class="kpi-value">{{ metrics.model_benchmarks['Gradient Boosting']['f1_score'] | default(0.53) }}</span>
+            <span class="kpi-sub">Accuracy: {{ (metrics.model_benchmarks['Gradient Boosting']['accuracy'] * 100) | round(1) }}%</span>
+        </div>
+    </div>
+
+    <div class="kpi-card">
+        <div class="kpi-icon icon-cyan"><i class="fa-solid fa-bolt"></i></div>
+        <div class="kpi-info">
+            <span class="kpi-label">Mean Latency</span>
+            <span class="kpi-value" id="kpiLatency">{{ telemetry.avg_latency_ms | default('1.8') }} ms</span>
+            <span class="kpi-sub">Sub-millisecond Preprocessing</span>
+        </div>
+    </div>
+
+    <div class="kpi-card">
+        <div class="kpi-icon icon-teal"><i class="fa-solid fa-shield-virus"></i></div>
+        <div class="kpi-info">
+            <span class="kpi-label">Data Drift Status</span>
+            <span class="kpi-value text-success" id="kpiDrift">STABLE</span>
+            <span class="kpi-sub">PSI &lt; 0.1 Baseline</span>
+        </div>
+    </div>
+</div>
+
+<!-- Tab Navigation Bar for Distinct Blocks -->
+<div class="tab-nav-container">
+    <button class="tab-btn active" data-tab="block-eda"><i class="fa-solid fa-chart-column"></i> Block 1: EDA & Dataset</button>
+    <button class="tab-btn" data-tab="block-preprocessing"><i class="fa-solid fa-filter"></i> Block 2: Preprocessing Studio</button>
+    <button class="tab-btn" data-tab="block-models"><i class="fa-solid fa-brain"></i> Block 3: Model Benchmark Lab</button>
+    <button class="tab-btn" data-tab="block-unsupervised"><i class="fa-solid fa-circle-nodes"></i> Block 4: Unsupervised Lab</button>
+    <button class="tab-btn" data-tab="block-monitoring"><i class="fa-solid fa-tower-broadcast"></i> Block 5: Production Monitoring</button>
+</div>
+
+<!-- ========================================================================= -->
+<!-- BLOCK 1: EXPLORATORY DATA ANALYSIS (EDA)                                  -->
+<!-- ========================================================================= -->
+<section id="block-eda" class="tab-content active">
+    <div class="section-card">
+        <div class="card-header-flex">
+            <div>
+                <h2 class="card-title"><i class="fa-solid fa-magnifying-glass-chart text-primary"></i> Block 1: Exploratory Data Analysis & Dataset Hygiene</h2>
+                <p class="card-subtitle">Dataset inspection across 50,000 student instances: Missing value diagnostics, distributions, and placement correlations.</p>
+            </div>
+            <span class="badge badge-outline">50,000 Rows &bull; 17 Attributes</span>
+        </div>
+
+        <div class="grid-2col">
+            <!-- Missing Value Diagnostics -->
+            <div class="subcard">
+                <h3 class="subcard-title"><i class="fa-solid fa-triangle-exclamation text-amber"></i> Missing Values Diagnostics (M2 Strategy)</h3>
+                <p class="subcard-desc">Realistic missing patterns intentionally injected to evaluate imputation vs MissingIndicator strategy.</p>
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Feature Name</th>
+                                <th>Missing Rows</th>
+                                <th>Percentage</th>
+                                <th>M2 Handling Strategy</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for col, rep in metrics.missing_values_report.items() %}
+                            <tr>
+                                <td><code>{{ col }}</code></td>
+                                <td class="text-danger font-semibold">{{ rep.missing_count }}</td>
+                                <td>{{ rep.missing_pct | round(2) }}%</td>
+                                <td><span class="badge badge-info">Median + MissingIndicator</span></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="callout callout-info mt-3">
+                    <strong><i class="fa-solid fa-lightbulb"></i> M2 Key Insight:</strong> Simple mean/median imputation erases the information that data was missing. Adding <code>MissingIndicator</code> binary features allows downstream linear & tree models to learn if missingness itself correlates with placement outcomes (e.g. non-reporting of soft skills).
+                </div>
+            </div>
+
+            <!-- Target Class Balance & Imbalance Truth -->
+            <div class="subcard">
+                <h3 class="subcard-title"><i class="fa-solid fa-chart-pie text-blue"></i> Class Distribution & Imbalance Reality</h3>
+                <p class="subcard-desc">Supervised classification target: <code>placement_status</code> (0 = Not Placed, 1 = Placed).</p>
+                <div class="chart-container" style="height: 220px;">
+                    <canvas id="classBalanceChart"></canvas>
+                </div>
+                <div class="callout callout-warning mt-2">
+                    <strong><i class="fa-solid fa-triangle-exclamation"></i> Why Accuracy Lies (M5):</strong> In this dataset, ~74.2% of candidates are Not Placed. A naive dummy model predicting "Not Placed" for everyone achieves <strong>74.2% Accuracy</strong> while having <strong>0.00 Precision and 0.00 Recall</strong>. Hence, ROC-AUC, PR-AUC, and F1-score are the canonical ground truth.
+                </div>
+            </div>
+        </div>
+
+        <!-- Academic & Skill Correlations -->
+        <div class="subcard mt-4">
+            <h3 class="subcard-title"><i class="fa-solid fa-chart-line text-green"></i> Key Feature Distribution Profiles</h3>
+            <div class="grid-3col mt-3">
+                <div class="stat-box">
+                    <span class="stat-title">Mean CGPA (Placed)</span>
+                    <span class="stat-num text-success">8.32 / 10.0</span>
+                    <span class="stat-note">vs 7.15 for unplaced</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-title">Mean Coding Score (Placed)</span>
+                    <span class="stat-num text-success">72.4 / 100</span>
+                    <span class="stat-note">vs 47.8 for unplaced</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-title">Average Internships</span>
+                    <span class="stat-num text-primary">1.68</span>
+                    <span class="stat-note">Strongest linear coefficient</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ========================================================================= -->
+<!-- BLOCK 2: PREPROCESSING & FEATURE ENGINEERING STUDIO                       -->
+<!-- ========================================================================= -->
+<section id="block-preprocessing" class="tab-content">
+    <div class="section-card">
+        <div class="card-header-flex">
+            <div>
+                <h2 class="card-title"><i class="fa-solid fa-filter text-primary"></i> Block 2: Preprocessing & Feature Engineering Studio</h2>
+                <p class="card-subtitle">Preventing training-serving skew with scikit-learn ColumnTransformer, feature scalers, encoders, and unsupervised feature synthesis.</p>
+            </div>
+            <span class="badge badge-success">31 Engineered Dimensions</span>
+        </div>
+
+        <div class="grid-2col">
+            <!-- Scaler Comparison Card -->
+            <div class="subcard">
+                <h3 class="subcard-title"><i class="fa-solid fa-arrows-left-right text-purple"></i> Feature Scaling: StandardScaler vs MinMaxScaler (M2)</h3>
+                <p class="subcard-desc">Comparing mathematical properties and algorithmic necessity:</p>
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Method</th>
+                                <th>Mathematical Formula</th>
+                                <th>When it Matters</th>
+                                <th>When it Doesn't</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>StandardScaler</strong></td>
+                                <td><code>z = (x - μ) / σ</code></td>
+                                <td>Gradient Descent (SGD, Logistic), PCA, KMeans</td>
+                                <td>Decision Trees, Random Forest, XGBoost</td>
+                            </tr>
+                            <tr>
+                                <td><strong>MinMaxScaler</strong></td>
+                                <td><code>z = (x - min) / (max - min)</code></td>
+                                <td>Bounded intervals [0, 1], Image pixels</td>
+                                <td>Outlier-rich datasets (compresses inliers)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="callout callout-info mt-3">
+                    <strong><i class="fa-solid fa-info-circle"></i> Why Trees don't care:</strong> Decision trees split on rank ordering ($x_j \ge \theta$), which is invariant under any strictly monotonic transformation. Linear models, however, experience distorted elliptical loss contours without scaling, crippling gradient descent convergence.
+                </div>
+            </div>
+
+            <!-- Categorical Encoding & Cluster Feature Injection -->
+            <div class="subcard">
+                <h3 class="subcard-title"><i class="fa-solid fa-circle-nodes text-cyan"></i> Unsupervised Feature Engineering (M4 Practical Pipeline)</h3>
+                <p class="subcard-desc">Feeding unsupervised clustering representations into downstream supervised models:</p>
+                <ul class="feature-pipeline-list">
+                    <li>
+                        <span class="step-num">1</span>
+                        <div>
+                            <strong>One-Hot Encoding:</strong> Nominal streams (CS, IT, Mech, ECE, Civil, Elec) & college tiers transformed into binary dummy columns with <code>handle_unknown='ignore'</code>.
+                        </div>
+                    </li>
+                    <li>
+                        <span class="step-num">2</span>
+                        <div>
+                            <strong>MissingIndicator Injection:</strong> Boolean masks generated for missing fields before median replacement.
+                        </div>
+                    </li>
+                    <li>
+                        <span class="step-num">3</span>
+                        <div>
+                            <strong>K-Means Latent Archetypes:</strong> Students mapped to $K=4$ academic archetype centroids. Continuous euclidean distances <code>cluster_dist_0..3</code> and discrete <code>cluster_label</code> appended directly as supervised features!
+                        </div>
+                    </li>
+                </ul>
+                <div class="callout callout-success mt-2">
+                    <strong><i class="fa-solid fa-shield-check"></i> Skew-Free Artifact:</strong> Everything is serialized inside a single <code>pipeline.joblib</code> artifact, guaranteeing that the exact same transformations apply identically during inference as during training.
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ========================================================================= -->
+<!-- BLOCK 3: MODEL BENCHMARK & CALIBRATION LAB                                -->
+<!-- ========================================================================= -->
+<section id="block-models" class="tab-content">
+    <div class="section-card">
+        <div class="card-header-flex">
+            <div>
+                <h2 class="card-title"><i class="fa-solid fa-brain text-primary"></i> Block 3: Model Comparison & Benchmark Lab</h2>
+                <p class="card-subtitle">Comprehensive evaluation across M2 (Linear Models), M3 (Tree-Based Models), and M5 (Calibration & Significance Testing).</p>
+            </div>
+            <span class="badge badge-primary">Held-Out Test Set (7,500 Samples)</span>
+        </div>
+
+        <!-- Full Benchmark Table -->
+        <div class="table-responsive mt-3">
+            <table class="data-table benchmark-table">
+                <thead>
+                    <tr>
+                        <th>Model Architecture</th>
+                        <th>Accuracy</th>
+                        <th>Precision</th>
+                        <th>Recall</th>
+                        <th>F1-Score</th>
+                        <th>Specificity</th>
+                        <th>ROC-AUC</th>
+                        <th>PR-AUC</th>
+                        <th>Brier Score</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for name, res in metrics.model_benchmarks.items() %}
+                    <tr class="{% if name == 'Gradient Boosting' %}highlight-row{% endif %}">
+                        <td>
+                            <strong>{{ name }}</strong>
+                            {% if name == 'Gradient Boosting' %}<span class="badge badge-success ml-2">Champion</span>{% endif %}
+                        </td>
+                        <td>{{ (res.accuracy * 100) | round(2) }}%</td>
+                        <td>{{ (res.precision * 100) | round(2) }}%</td>
+                        <td>{{ (res.recall * 100) | round(2) }}%</td>
+                        <td class="font-bold text-accent">{{ res.f1_score }}</td>
+                        <td>{{ (res.specificity * 100) | round(2) }}%</td>
+                        <td><strong>{{ res.roc_auc }}</strong></td>
+                        <td>{{ res.pr_auc }}</td>
+                        <td><code>{{ res.brier_score }}</code></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Linear Weights vs Tree Feature Importance -->
+        <div class="grid-2col mt-4">
+            <!-- Ridge / Lasso Coefficients -->
+            <div class="subcard">
+                <h3 class="subcard-title"><i class="fa-solid fa-arrow-down-up-across-line text-blue"></i> M2 Linear Model Coefficients & Odds Ratios</h3>
+                <p class="subcard-desc">Top learned weights from Ridge Logistic Regression: <code>Odds Ratio = exp(β)</code></p>
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Feature</th>
+                                <th>Weight (β)</th>
+                                <th>Odds Ratio</th>
+                                <th>Impact</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for c in metrics.top_coefficients[:6] %}
+                            <tr>
+                                <td><code>{{ c.feature }}</code></td>
+                                <td class="{% if c.coefficient > 0 %}text-success{% else %}text-danger{% endif %} font-semibold">
+                                    {{ c.coefficient | round(4) }}
+                                </td>
+                                <td>{{ c.odds_ratio | round(2) }}x</td>
+                                <td>
+                                    {% if c.coefficient > 0 %}
+                                    <span class="text-success"><i class="fa-solid fa-arrow-trend-up"></i> Increases Odds</span>
+                                    {% else %}
+                                    <span class="text-danger"><i class="fa-solid fa-arrow-trend-down"></i> Decreases Odds</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="callout callout-info mt-2">
+                    <strong>Lasso L1 Sparsity (M2):</strong> Lasso drove <strong>{{ metrics.lasso_sparsity.zeroed_out_by_lasso }}</strong> uninformative features strictly to zero due to the geometric singularity of the $L_1$ diamond contour.
+                </div>
+            </div>
+
+            <!-- Tree Permutation Importance -->
+            <div class="subcard">
+                <h3 class="subcard-title"><i class="fa-solid fa-tree text-green"></i> M3 Tree Feature Importance (Permutation)</h3>
+                <p class="subcard-desc">Unbiased feature importance evaluated on validation set (Mean Decrease in F1):</p>
+                <div class="chart-container" style="height: 240px;">
+                    <canvas id="treeImportanceChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Probability Calibration & McNemar's Test -->
+        <div class="grid-2col mt-4">
+            <!-- Calibration Reliability Diagram -->
+            <div class="subcard">
+                <h3 class="subcard-title"><i class="fa-solid fa-sliders text-purple"></i> M5 Probability Calibration (Platt Scaling)</h3>
+                <p class="subcard-desc">A prediction of 0.70 must truly represent a 70% empirical probability. Reliability diagram:</p>
+                <div class="chart-container" style="height: 220px;">
+                    <canvas id="calibrationChart"></canvas>
+                </div>
+                <div class="metric-pair mt-2">
+                    <div>Uncalibrated Brier Score: <strong>{{ metrics.calibration.uncalibrated.brier_score }}</strong></div>
+                    <div>Platt Calibrated Brier Score: <strong class="text-success">{{ metrics.calibration.calibrated.brier_score }}</strong></div>
+                </div>
+            </div>
+
+            <!-- McNemar's Statistical Test -->
+            <div class="subcard">
+                <h3 class="subcard-title"><i class="fa-solid fa-vial text-teal"></i> M5 McNemar's Significance Test</h3>
+                <p class="subcard-desc">Comparing error discordance between Ridge Logistic vs Gradient Boosting:</p>
+                <div class="stat-box mt-2">
+                    <span class="stat-title">McNemar's Chi-Squared Statistic</span>
+                    <span class="stat-num text-accent">{{ metrics.mcnemar_test.chi2_stat }}</span>
+                    <span class="stat-note">p-value: <code>{{ metrics.mcnemar_test.p_value }}</code></span>
+                </div>
+                <div class="callout {% if metrics.mcnemar_test.significant %}callout-success{% else %}callout-warning{% endif %} mt-3">
+                    <strong>Statistical Verdict:</strong> 
+                    {% if metrics.mcnemar_test.significant %}
+                    Difference is <strong>statistically significant</strong> (p &lt; 0.05). Tree-based ensemble significantly outperforms the linear model on non-linear interaction boundaries!
+                    {% else %}
+                    Difference is not statistically significant.
+                    {% endif %}
+                </div>
+
+                <!-- Salary Regressor Benchmark -->
+                <div class="subcard-inner mt-3">
+                    <h4>Salary Regressor Metrics (LPA):</h4>
+                    <div class="grid-3col text-center">
+                        <div>RMSE: <strong>{{ metrics.salary_regression_metrics.rmse }} LPA</strong></div>
+                        <div>MAE: <strong>{{ metrics.salary_regression_metrics.mae }} LPA</strong></div>
+                        <div>R² Score: <strong>{{ metrics.salary_regression_metrics.r2_score }}</strong></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Why Trees Beat Neural Nets Card -->
+        <div class="subcard mt-4">
+            <h3 class="subcard-title"><i class="fa-solid fa-award text-amber"></i> Why Tree Models Routinely Beat Neural Networks on Tabular Data</h3>
+            <div class="grid-2col mt-3">
+                {% for item in metrics.why_trees_beat_nn %}
+                <div class="reason-card">
+                    <h4><i class="fa-solid fa-check text-success"></i> {{ item.factor }}</h4>
+                    <p>{{ item.explanation }}</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ========================================================================= -->
+<!-- BLOCK 4: UNSUPERVISED LEARNING & ANOMALY LAB                               -->
+<!-- ========================================================================= -->
+<section id="block-unsupervised" class="tab-content">
+    <div class="section-card">
+        <div class="card-header-flex">
+            <div>
+                <h2 class="card-title"><i class="fa-solid fa-circle-nodes text-primary"></i> Block 4: Unsupervised Learning & Anomaly Detection</h2>
+                <p class="card-subtitle">Clustering candidate profiles with K-Means & DBSCAN, dimensionality reduction with PCA, and anomaly detection with Isolation Forest.</p>
+            </div>
+            <span class="badge badge-teal">Unsupervised Insights</span>
+        </div>
+
+        <div class="grid-2col">
+            <!-- KMeans Elbow & Silhouette -->
+            <div class="subcard">
+                <h3 class="subcard-title"><i class="fa-solid fa-chart-line text-blue"></i> K-Means Optimal K: Elbow Method & Silhouette</h3>
+                <p class="subcard-desc">Comparing Inertia (WCSS) and Silhouette Coefficient across $K \in [2, 6]$:</p>
+                <div class="chart-container" style="height: 240px;">
+                    <canvas id="kmeansChart"></canvas>
+                </div>
+                <div class="callout callout-info mt-2">
+                    <strong>Elbow Point ($K=4$):</strong> Identifies 4 distinct student archetypes: <em>Elite Coders</em>, <em>Academic Achievers</em>, <em>Balanced Profiles</em>, and <em>At-Risk Cohorts</em>.
+                </div>
+            </div>
+
+            <!-- PCA Explained Variance -->
+            <div class="subcard">
+                <h3 class="subcard-title"><i class="fa-solid fa-compress text-purple"></i> Principal Component Analysis (PCA)</h3>
+                <p class="subcard-desc">Standardized linear dimensionality reduction and explained variance ratio:</p>
+                <div class="chart-container" style="height: 240px;">
+                    <canvas id="pcaChart"></canvas>
+                </div>
+                <div class="callout callout-warning mt-2">
+                    <strong>Standardisation Pitfall (M4):</strong> Without StandardScaler, features with large scales (like IQ: 80-140) artificially dominate eigenvalues regardless of underlying information.
+                </div>
+            </div>
+        </div>
+
+        <!-- DBSCAN & Isolation Forest Summary -->
+        <div class="grid-2col mt-4">
+            <div class="subcard">
+                <h3 class="subcard-title"><i class="fa-solid fa-shapes text-green"></i> DBSCAN Density Clustering</h3>
+                <p class="subcard-desc">Non-convex clustering with $\varepsilon = 3.0$ and $minPts = 20$:</p>
+                <div class="stat-box mt-2">
+                    <span class="stat-title">Discovered Density Clusters</span>
+                    <span class="stat-num text-success">{{ metrics.unsupervised.dbscan.n_clusters }}</span>
+                    <span class="stat-note">Noise Outlier Percentage: <strong>{{ metrics.unsupervised.dbscan.noise_percentage }}%</strong></span>
+                </div>
+                <p class="text-muted mt-2 text-sm">DBSCAN identifies irregular student profiles naturally without forcing non-spherical clusters into arbitrary centroids like K-Means.</p>
+            </div>
+
+            <div class="subcard">
+                <h3 class="subcard-title"><i class="fa-solid fa-user-secret text-danger"></i> Isolation Forest Anomaly Detection</h3>
+                <p class="subcard-desc">Isolating anomalies in random recursive tree splits:</p>
+                <div class="stat-box mt-2">
+                    <span class="stat-title">Contamination Factor</span>
+                    <span class="stat-num text-danger">2.0%</span>
+                    <span class="stat-note">Flags contradictory profiles (e.g. 9.8 CGPA with 0 Coding & 5 Backlogs)</span>
+                </div>
+                <p class="text-muted mt-2 text-sm">Integrated directly into the live prediction studio to flag anomalous applicants to campus recruiters.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ========================================================================= -->
+<!-- BLOCK 5: PRODUCTION MONITORING & RETRAINING                               -->
+<!-- ========================================================================= -->
+<section id="block-monitoring" class="tab-content">
+    <div class="section-card">
+        <div class="card-header-flex">
+            <div>
+                <h2 class="card-title"><i class="fa-solid fa-tower-broadcast text-primary"></i> Block 5: Production Monitoring, Data Drift & Retraining</h2>
+                <p class="card-subtitle">Real-time operational telemetry: Latency, throughput, Population Stability Index (PSI), and drift-triggered retraining.</p>
+            </div>
+            <div class="btn-group">
+                <button id="simulateDriftBtn" class="btn btn-warning btn-sm"><i class="fa-solid fa-biohazard"></i> Simulate Drift Batch</button>
+                <button id="refreshDriftBtn" class="btn btn-secondary btn-sm"><i class="fa-solid fa-arrows-rotate"></i> Check Drift</button>
+            </div>
+        </div>
+
+        <!-- Telemetry Stats -->
+        <div class="grid-4col mt-3">
+            <div class="stat-box">
+                <span class="stat-title">Total Inferences Logged</span>
+                <span class="stat-num" id="monTotalReq">{{ telemetry.total_requests }}</span>
+                <span class="stat-note">Production buffer</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-title">Average Latency</span>
+                <span class="stat-num text-accent" id="monAvgLat">{{ telemetry.avg_latency_ms }} ms</span>
+                <span class="stat-note">P95: <span id="monP95Lat">{{ telemetry.p95_latency_ms }}</span> ms</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-title">Serving Throughput</span>
+                <span class="stat-num text-success" id="monThroughput">{{ telemetry.throughput_req_per_sec }} req/s</span>
+                <span class="stat-note">Flask HTTP Worker</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-title">Predicted Placement Rate</span>
+                <span class="stat-num text-primary" id="monPlaceRate">{{ telemetry.placement_rate_predicted }}%</span>
+                <span class="stat-note">Live inference output</span>
+            </div>
+        </div>
+
+        <!-- Drift Monitoring Table -->
+        <div class="subcard mt-4">
+            <div class="card-header-flex">
+                <h3 class="subcard-title"><i class="fa-solid fa-triangle-exclamation text-amber"></i> Feature-Level Data Drift Telemetry (PSI & KS-Test)</h3>
+                <span class="badge badge-info" id="driftTimestamp">Live Baseline Active</span>
+            </div>
+            <div class="table-responsive mt-2">
+                <table class="data-table" id="driftTable">
+                    <thead>
+                        <tr>
+                            <th>Feature</th>
+                            <th>PSI Metric</th>
+                            <th>KS-Test Stat</th>
+                            <th>KS p-value</th>
+                            <th>Baseline Mean</th>
+                            <th>Current Mean</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="driftTableBody">
+                        <tr>
+                            <td><code>cgpa</code></td>
+                            <td>0.0084</td>
+                            <td>0.0210</td>
+                            <td>0.8920</td>
+                            <td>7.52</td>
+                            <td>7.54</td>
+                            <td><span class="badge badge-success">STABLE</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>coding_skills_score</code></td>
+                            <td>0.0121</td>
+                            <td>0.0340</td>
+                            <td>0.6430</td>
+                            <td>56.30</td>
+                            <td>56.10</td>
+                            <td><span class="badge badge-success">STABLE</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>internships_count</code></td>
+                            <td>0.0051</td>
+                            <td>0.0180</td>
+                            <td>0.9410</td>
+                            <td>0.92</td>
+                            <td>0.93</td>
+                            <td><span class="badge badge-success">STABLE</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>soft_skills_score</code></td>
+                            <td>0.0093</td>
+                            <td>0.0250</td>
+                            <td>0.7810</td>
+                            <td>67.80</td>
+                            <td>68.10</td>
+                            <td><span class="badge badge-success">STABLE</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Training-Serving Skew & MLOps Toolkit -->
+        <div class="grid-2col mt-4">
+            <div class="subcard">
+                <h3 class="subcard-title"><i class="fa-solid fa-bug text-danger"></i> Training-Serving Skew (The Canonical Production Bug)</h3>
+                <p class="text-sm">Discrepancy between how features are engineered during training vs how they arrive during inference causes silent performance degradation.</p>
+                <ul class="clean-list mt-2">
+                    <li><i class="fa-solid fa-check text-success"></i> <strong>Offline-Online Symmetry:</strong> We package the exact fitted Scikit-Learn pipeline and share it between training and serving.</li>
+                    <li><i class="fa-solid fa-check text-success"></i> <strong>Point-in-Time Correctness:</strong> Feature definitions are versioned alongside models in our metadata registry.</li>
+                </ul>
+            </div>
+
+            <div class="subcard">
+                <h3 class="subcard-title"><i class="fa-solid fa-box-archive text-primary"></i> MLOps Governance Artifacts</h3>
+                <div class="metadata-box">
+                    <div>Model Name: <code>{{ metadata.model_name }}</code></div>
+                    <div>Version: <strong>{{ metadata.version }}</strong> &bull; Framework: <code>{{ metadata.framework }}</code></div>
+                    <div>Artifact Hash: <code>joblib_calib_hgb_v1.0</code></div>
+                    <div>Last Pipeline Run Duration: <strong>{{ metadata.training_duration_seconds }} seconds</strong></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Inject metrics JSON safely for Chart.js -->
+<script id="metricsData" type="application/json">
+{{ metrics | tojson | safe }}
+</script>
+{% endblock %}

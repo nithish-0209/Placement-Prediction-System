@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+
+{% block title %}ML System Architecture (M1-M6) — PlacementPredict{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <div class="header-left">
+        <h1 class="page-title">M1: PlacementPredict as a System — The ML Lifecycle</h1>
+        <p class="page-subtitle">A comprehensive architectural blueprint detailing where every lifecycle phase lives in code, how training-serving skew is avoided, and end-to-end prediction mechanics.</p>
+    </div>
+</div>
+
+<!-- Architecture Flow Diagram Card -->
+<div class="section-card">
+    <h2 class="card-title"><i class="fa-solid fa-arrows-spin text-primary"></i> The Complete ML System Lifecycle in Code</h2>
+    <p class="card-subtitle">Every production ML system transitions through distinct mathematical and operational boundaries:</p>
+
+    <div class="lifecycle-pipeline mt-4">
+        <div class="lifecycle-node">
+            <div class="node-icon"><i class="fa-solid fa-database"></i></div>
+            <div class="node-title">1. Raw Data</div>
+            <div class="node-file"><code>data/placement_data.csv</code></div>
+            <div class="node-desc">50k student records with academic, cognitive, and demographic attributes.</div>
+        </div>
+        <div class="lifecycle-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+
+        <div class="lifecycle-node">
+            <div class="node-icon"><i class="fa-solid fa-broom"></i></div>
+            <div class="node-title">2. Ingestion & Split</div>
+            <div class="node-file"><code>models/data_pipeline.py</code></div>
+            <div class="node-desc">3-way stratified split: 70% Train, 15% Validation, 15% Held-out Test.</div>
+        </div>
+        <div class="lifecycle-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+
+        <div class="lifecycle-node">
+            <div class="node-icon"><i class="fa-solid fa-sliders"></i></div>
+            <div class="node-title">3. Feature Pipeline</div>
+            <div class="node-file"><code>models/feature_engineering.py</code></div>
+            <div class="node-desc">MissingIndicator, StandardScaler, OneHotEncoder, and KMeans Cluster feature adder.</div>
+        </div>
+        <div class="lifecycle-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+
+        <div class="lifecycle-node">
+            <div class="node-icon"><i class="fa-solid fa-brain"></i></div>
+            <div class="node-title">4. Model Training</div>
+            <div class="node-file"><code>models/train_all.py</code></div>
+            <div class="node-desc">Ridge, Lasso, ElasticNet, Decision Trees, Random Forests, HistGradientBoosting.</div>
+        </div>
+        <div class="lifecycle-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+
+        <div class="lifecycle-node">
+            <div class="node-icon"><i class="fa-solid fa-box-archive"></i></div>
+            <div class="node-title">5. Packaged Artifacts</div>
+            <div class="node-file"><code>models/saved/*.joblib</code></div>
+            <div class="node-desc">Serialized pipeline, calibrated model, drift baseline, and metadata JSON.</div>
+        </div>
+        <div class="lifecycle-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+
+        <div class="lifecycle-node">
+            <div class="node-icon"><i class="fa-solid fa-server"></i></div>
+            <div class="node-title">6. Serving Framework</div>
+            <div class="node-file"><code>app.py (Flask REST)</code></div>
+            <div class="node-desc">Online low-latency inference + high-throughput batch prediction.</div>
+        </div>
+        <div class="lifecycle-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+
+        <div class="lifecycle-node">
+            <div class="node-icon"><i class="fa-solid fa-chart-line"></i></div>
+            <div class="node-title">7. Monitoring & Drift</div>
+            <div class="node-file"><code>models/monitoring.py</code></div>
+            <div class="node-desc">Telemetry latency tracking + Kolmogorov-Smirnov & PSI drift detection.</div>
+        </div>
+        <div class="lifecycle-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+
+        <div class="lifecycle-node">
+            <div class="node-icon"><i class="fa-solid fa-arrows-rotate"></i></div>
+            <div class="node-title">8. Retraining Loop</div>
+            <div class="node-file"><code>/api/retrain</code></div>
+            <div class="node-desc">Automated drift-triggered pipeline re-execution and model versioning.</div>
+        </div>
+    </div>
+</div>
+
+<!-- Detailed Lifecycle Topics Grid -->
+<div class="grid-2col mt-4">
+    <!-- Supervised vs Unsupervised Split -->
+    <div class="section-card">
+        <h3 class="card-title"><i class="fa-solid fa-diagram-project text-blue"></i> Supervised vs Unsupervised vs RL</h3>
+        <p class="subcard-desc">Categorization of Machine Learning Paradigms and PlacementPredict's Role:</p>
+        <div class="table-responsive mt-3">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Paradigm</th>
+                        <th>Nature of Target</th>
+                        <th>PlacementPredict Mapping</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Supervised Learning</strong></td>
+                        <td>Ground truth labels $y \in \{0, 1\}$ or $y \in \mathbb{R}$ present during training.</td>
+                        <td><strong>Core Task:</strong> Classification of placement status ($y \in \{0, 1\}$) & Salary Package Regression ($y \in \mathbb{R}$).</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Unsupervised Learning</strong></td>
+                        <td>Unlabeled inputs $X$; discovers latent manifolds and densities.</td>
+                        <td><strong>Synthesizer:</strong> K-Means student archetypes, DBSCAN density, and Isolation Forest profile anomalies.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Reinforcement Learning</strong></td>
+                        <td>Sequential policy learning via environmental reward signals $R_t$.</td>
+                        <td><em>Not applicable:</em> No dynamic state-action feedback environment or interactive policies here.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Training-Serving Boundary & Skew -->
+    <div class="section-card">
+        <h3 class="card-title"><i class="fa-solid fa-shield-virus text-danger"></i> Training-Serving Skew & Feature Stores</h3>
+        <p class="subcard-desc">The canonical bug class responsible for the vast majority of production ML failures:</p>
+        <ul class="feature-pipeline-list mt-3">
+            <li>
+                <span class="step-num">!</span>
+                <div>
+                    <strong>What is Training-Serving Skew?</strong> A condition where features seen by the model during inference differ in distribution, schema, or computation logic from those seen during training (e.g. standardizing with test batch mean instead of frozen training mean).
+                </div>
+            </li>
+            <li>
+                <span class="step-num">✓</span>
+                <div>
+                    <strong>How PlacementPredict Prevents It:</strong> A single Scikit-Learn <code>ColumnTransformer</code> is fitted exclusively on training data and exported as a serialized joblib pipeline. Online requests pass through this exact frozen pipeline.
+                </div>
+            </li>
+            <li>
+                <span class="step-num">⚑</span>
+                <div>
+                    <strong>Why Feature Stores Exist (Feast):</strong> In industrial distributed systems, offline feature tables (BigQuery/Snowflake) and online low-latency caches (Redis) must adhere to point-in-time correctness, preventing data leakage.
+                </div>
+            </li>
+        </ul>
+    </div>
+</div>
+
+<!-- Tracing End-to-End & Course Scope Grid -->
+<div class="grid-2col mt-4">
+    <!-- End-to-End Prediction Tracing -->
+    <div class="section-card">
+        <h3 class="card-title"><i class="fa-solid fa-route text-green"></i> Tracing One Prediction: Online vs Batch</h3>
+        <div class="comparison-grid mt-3">
+            <div class="comparison-card">
+                <h4><i class="fa-solid fa-bolt text-accent"></i> Online Prediction (REST API)</h4>
+                <ul>
+                    <li>Single student HTTP POST payload ingested via JSON.</li>
+                    <li>Schema validation & null check executed in-memory.</li>
+                    <li>Transformer pipeline imputes, scales, and extracts cluster distance.</li>
+                    <li>Platt-calibrated HistGradientBoosting model computes $P(\text{Placed})$.</li>
+                    <li>Salary regressor predicts LPA if placed.</li>
+                    <li>Inference latency logged to telemetry buffer (&lt; 2ms target).</li>
+                </ul>
+            </div>
+            <div class="comparison-card">
+                <h4><i class="fa-solid fa-layer-group text-primary"></i> Batch Prediction (Vectorized)</h4>
+                <ul>
+                    <li>1,000 to 50,000 student CSV file ingested.</li>
+                    <li>Vectorized matrix multiplication & tree traversal in C/C++.</li>
+                    <li>Throughput prioritized over millisecond latency.</li>
+                    <li>Aggregate statistics computed for cohort level reporting.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Course Ownership Roadmap -->
+    <div class="section-card">
+        <h3 class="card-title"><i class="fa-solid fa-map-location-dot text-purple"></i> What This Project Owns vs Downstream Courses</h3>
+        <p class="subcard-desc">Clear boundaries across the modern AI engineering stack:</p>
+        <div class="table-responsive mt-3">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Domain / Course</th>
+                        <th>Core Technologies</th>
+                        <th>Focus & Scope</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Classical ML & MLOps (Here!)</strong></td>
+                        <td>Scikit-learn, XGBoost, Flask, Docker, PSI/KS Drift</td>
+                        <td>Tabular structured data, linear/tree models, production lifecycle & calibration.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Deep Learning (DLAC)</strong></td>
+                        <td>PyTorch, CNNs, Transformers, Autoencoders</td>
+                        <td>High-dimensional unstructured data (vision, audio, raw sensor signals).</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Generative Models (GALE)</strong></td>
+                        <td>Diffusion Models, VAEs, GANs, Latent Diffusion</td>
+                        <td>Generative synthesis, image generation, multimodality.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Large Language Models (NLPL)</strong></td>
+                        <td>Transformers, RAG, LoRA fine-tuning, Agentic systems</td>
+                        <td>Natural language understanding, reasoning agents, semantic vector search.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

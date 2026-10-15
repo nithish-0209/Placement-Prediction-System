@@ -1,0 +1,440 @@
+{
+  "timestamp": "2026-10-15 16:31:42",
+  "total_dataset_rows": 50000,
+  "missing_values_report": {
+    "academic_percentage_12th": {
+      "missing_count": 1281,
+      "missing_pct": 2.562
+    },
+    "internships_count": {
+      "missing_count": 780,
+      "missing_pct": 1.5599999999999998
+    },
+    "soft_skills_score": {
+      "missing_count": 999,
+      "missing_pct": 1.9980000000000002
+    }
+  },
+  "model_benchmarks": {
+    "Ridge Logistic": {
+      "accuracy": 0.7951,
+      "precision": 0.6636,
+      "recall": 0.4146,
+      "f1_score": 0.5104,
+      "specificity": 0.9271,
+      "confusion_matrix": {
+        "tn": 5162,
+        "fp": 406,
+        "fn": 1131,
+        "tp": 801
+      },
+      "roc_auc": 0.8131,
+      "pr_auc": 0.6148,
+      "brier_score": 0.1428
+    },
+    "Lasso Logistic": {
+      "accuracy": 0.7949,
+      "precision": 0.6579,
+      "recall": 0.4249,
+      "f1_score": 0.5164,
+      "specificity": 0.9233,
+      "confusion_matrix": {
+        "tn": 5141,
+        "fp": 427,
+        "fn": 1111,
+        "tp": 821
+      },
+      "roc_auc": 0.8127,
+      "pr_auc": 0.615,
+      "brier_score": 0.1429
+    },
+    "Decision Tree (Pruned)": {
+      "accuracy": 0.7544,
+      "precision": 0.5449,
+      "recall": 0.2826,
+      "f1_score": 0.3722,
+      "specificity": 0.9181,
+      "confusion_matrix": {
+        "tn": 5112,
+        "fp": 456,
+        "fn": 1386,
+        "tp": 546
+      },
+      "roc_auc": 0.7275,
+      "pr_auc": 0.4628,
+      "brier_score": 0.1673
+    },
+    "Random Forest": {
+      "accuracy": 0.7765,
+      "precision": 0.6928,
+      "recall": 0.2381,
+      "f1_score": 0.3544,
+      "specificity": 0.9634,
+      "confusion_matrix": {
+        "tn": 5364,
+        "fp": 204,
+        "fn": 1472,
+        "tp": 460
+      },
+      "roc_auc": 0.7861,
+      "pr_auc": 0.5639,
+      "brier_score": 0.1537
+    },
+    "Gradient Boosting": {
+      "accuracy": 0.7916,
+      "precision": 0.6554,
+      "recall": 0.4027,
+      "f1_score": 0.4989,
+      "specificity": 0.9265,
+      "confusion_matrix": {
+        "tn": 5159,
+        "fp": 409,
+        "fn": 1154,
+        "tp": 778
+      },
+      "roc_auc": 0.802,
+      "pr_auc": 0.6029,
+      "brier_score": 0.146
+    }
+  },
+  "mcnemar_test": {
+    "chi2_stat": 2.0032,
+    "p_value": 0.15696698825357366,
+    "significant": false,
+    "contingency_table": {
+      "b_A_right_B_wrong": 169,
+      "c_A_wrong_B_right": 143
+    }
+  },
+  "calibration": {
+    "uncalibrated": {
+      "prob_pred": [
+        0.05419501229776749,
+        0.14432057114185404,
+        0.2458135091709893,
+        0.34923138874183274,
+        0.44753091050797916,
+        0.5470087503014777,
+        0.6482242089775048,
+        0.7482397845972394,
+        0.8400968406207678,
+        0.9127270470560874
+      ],
+      "prob_true": [
+        0.05555555555555555,
+        0.1596009975062344,
+        0.2464722483537159,
+        0.3474240422721268,
+        0.43033509700176364,
+        0.5327313769751693,
+        0.6511627906976745,
+        0.7509727626459144,
+        0.8636363636363636,
+        1.0
+      ],
+      "brier_score": 0.146
+    },
+    "calibrated": {
+      "prob_pred": [
+        0.0605681403452254,
+        0.14593711739570037,
+        0.24591350386123495,
+        0.34784995222049825,
+        0.44884357563230337,
+        0.5466548176810846,
+        0.6460589130848855,
+        0.7430828755501667,
+        0.8265178913055748
+      ],
+      "prob_true": [
+        0.05595116988809766,
+        0.1474604041507373,
+        0.2422680412371134,
+        0.3658243080625752,
+        0.42880258899676377,
+        0.5392354124748491,
+        0.6876876876876877,
+        0.7524752475247525,
+        0.896551724137931
+      ],
+      "brier_score": 0.1498
+    }
+  },
+  "salary_regression_metrics": {
+    "rmse": 1.8471,
+    "mae": 1.4728,
+    "mape": 7.0,
+    "r2_score": 0.7752
+  },
+  "linear_regression_comparison": {
+    "normal_equation": {
+      "rmse": 1.8748070768990721,
+      "r2": 0.7733306944683647,
+      "training_time_sec": 0.006329774856567383,
+      "method": "Analytical (X^T X)^-1 X^T y",
+      "complexity": "O(n * d^2 + d^3)"
+    },
+    "gradient_descent_sgd": {
+      "rmse": 1.8830413237167685,
+      "r2": 0.7713352360512689,
+      "training_time_sec": 0.021618127822875977,
+      "method": "Iterative Stochastic Gradient Descent",
+      "complexity": "O(epochs * n * d)"
+    }
+  },
+  "lasso_sparsity": {
+    "total_features": 31,
+    "zeroed_out_by_lasso": 10
+  },
+  "top_coefficients": [
+    {
+      "feature": "cat__college_tier_Tier 1",
+      "coefficient": 0.703432944966846,
+      "odds_ratio": 2.020677689432073,
+      "is_sparse_zero": false,
+      "absolute_impact": 0.703432944966846
+    },
+    {
+      "feature": "cat__college_tier_Tier 3",
+      "coefficient": -0.6995215961468091,
+      "odds_ratio": 0.49682292895004493,
+      "is_sparse_zero": false,
+      "absolute_impact": 0.6995215961468091
+    },
+    {
+      "feature": "cat__stream_Civil",
+      "coefficient": -0.6603250456231466,
+      "odds_ratio": 0.5166833615285223,
+      "is_sparse_zero": false,
+      "absolute_impact": 0.6603250456231466
+    },
+    {
+      "feature": "num__backlogs",
+      "coefficient": -0.6557633416174962,
+      "odds_ratio": 0.5190457021412556,
+      "is_sparse_zero": false,
+      "absolute_impact": 0.6557633416174962
+    },
+    {
+      "feature": "cat__stream_Computer Science",
+      "coefficient": 0.6421120350756163,
+      "odds_ratio": 1.9004905462303825,
+      "is_sparse_zero": false,
+      "absolute_impact": 0.6421120350756163
+    },
+    {
+      "feature": "num__cgpa",
+      "coefficient": 0.5789775669425503,
+      "odds_ratio": 1.784213259233444,
+      "is_sparse_zero": false,
+      "absolute_impact": 0.5789775669425503
+    },
+    {
+      "feature": "num__coding_skills_score",
+      "coefficient": 0.5697972401041169,
+      "odds_ratio": 1.7679085541361585,
+      "is_sparse_zero": false,
+      "absolute_impact": 0.5697972401041169
+    },
+    {
+      "feature": "cat__stream_Mechanical",
+      "coefficient": -0.49897925284212324,
+      "odds_ratio": 0.6071500902468956,
+      "is_sparse_zero": false,
+      "absolute_impact": 0.49897925284212324
+    },
+    {
+      "feature": "cat__stream_Information Technology",
+      "coefficient": 0.4961071762201236,
+      "odds_ratio": 1.6423155655611816,
+      "is_sparse_zero": false,
+      "absolute_impact": 0.4961071762201236
+    },
+    {
+      "feature": "num__internships_count",
+      "coefficient": 0.47616456832250803,
+      "odds_ratio": 1.609887930715734,
+      "is_sparse_zero": false,
+      "absolute_impact": 0.47616456832250803
+    }
+  ],
+  "tree_feature_importance": {
+    "features": [
+      "num__cgpa",
+      "num__iq",
+      "num__academic_percentage_10th",
+      "num__academic_percentage_12th",
+      "num__internships_count",
+      "num__projects_count",
+      "num__coding_skills_score",
+      "num__hackathons_attended",
+      "num__soft_skills_score",
+      "num__backlogs"
+    ],
+    "permutation_importance": [
+      0.02300000000000002,
+      0.005600000000000005,
+      0.0016000000000000014,
+      0.002200000000000002,
+      0.014200000000000013,
+      0.002400000000000002,
+      0.008200000000000008,
+      0.004200000000000004,
+      0.0006000000000000005,
+      0.013600000000000011
+    ]
+  },
+  "unsupervised": {
+    "kmeans_elbow": {
+      "k_values": [
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "inertias": [
+        68090.99336246168,
+        65503.03499464217,
+        56921.89396968141,
+        52686.7705320979,
+        50453.108030589574
+      ],
+      "silhouette_scores": [
+        0.5092921035385566,
+        0.13939760680219254,
+        0.10501838231082873,
+        0.10240729517519101,
+        0.06853071960584829
+      ]
+    },
+    "dbscan": {
+      "n_clusters": 1,
+      "noise_count": 782,
+      "noise_percentage": 26.07,
+      "unique_labels": [
+        -1,
+        0
+      ]
+    },
+    "pca": {
+      "explained_variance": [
+        0.1896089459541786,
+        0.101579855085541,
+        0.08798036028397237,
+        0.06709605667259733,
+        0.05057256304194106,
+        0.04974694493313798
+      ],
+      "cumulative_variance": [
+        0.1896089459541786,
+        0.2911888010397196,
+        0.379169161323692,
+        0.4462652179962893,
+        0.4968377810382304,
+        0.5465847259713684
+      ]
+    },
+    "concepts": {
+      "hierarchical_linkages": [
+        {
+          "name": "Ward",
+          "description": "Minimizes the variance of clusters being merged. Tends to produce equal-sized, spherical clusters."
+        },
+        {
+          "name": "Complete",
+          "description": "Considers maximum distance between points in two clusters. Avoids chaining, produces compact clusters."
+        },
+        {
+          "name": "Average",
+          "description": "Considers average distance between all pairs. Robust compromise between single and complete."
+        },
+        {
+          "name": "Single",
+          "description": "Considers minimum distance between any pair. Susceptible to chaining phenomenon."
+        }
+      ],
+      "tsne_umap_pitfalls": [
+        {
+          "rule": "Local vs Global Distances",
+          "explanation": "t-SNE preserves local neighbor relationships only. The distance between separated distant clusters in t-SNE plot is meaningless and cannot be used to infer global similarity."
+        },
+        {
+          "rule": "Perplexity Sensitivity",
+          "explanation": "Changing perplexity (5 vs 30 vs 50) drastically changes visual topology, creating artificial clusters from uniform noise."
+        },
+        {
+          "rule": "UMAP Speed & Topology",
+          "explanation": "UMAP preserves more global structure using fuzzy simplicial sets and runs significantly faster than t-SNE, but still distorts metric density."
+        }
+      ]
+    }
+  },
+  "ccp_path": {
+    "alphas": [
+      0.0,
+      0.00019793814432989706,
+      0.0002666666666666666,
+      0.0003207487056949422,
+      0.00035,
+      0.0003799999999999999,
+      0.00046631016042780754,
+      0.00056,
+      0.000703093315279589,
+      0.022697936665338925
+    ],
+    "impurities": [
+      0.0,
+      0.019897092112190658,
+      0.0408353618848996,
+      0.06235266267353318,
+      0.08682146807777179,
+      0.11426434944819742,
+      0.15241095352686895,
+      0.20338641120224396,
+      0.2664835515131721,
+      0.37857408000000004
+    ]
+  },
+  "learning_curves": {
+    "train_sizes": [
+      666,
+      1333,
+      1999,
+      2666,
+      3333
+    ],
+    "train_scores_mean": [
+      1.0,
+      0.9966329966329966,
+      0.9833941479445855,
+      0.9483900488998896,
+      0.9054531439774888
+    ],
+    "val_scores_mean": [
+      0.4288148715521645,
+      0.4548326102079179,
+      0.4605418115067093,
+      0.4815713464758986,
+      0.47143000770152854
+    ]
+  },
+  "why_trees_beat_nn": [
+    {
+      "factor": "Step-Function Decision Boundaries",
+      "explanation": "Tabular data features have sharp, disjoint thresholds (e.g. CGPA >= 7.5 or Backlogs == 0). Trees represent orthogonal axis-aligned step functions naturally, whereas neural networks struggle with high-frequency step functions due to smooth activation biases."
+    },
+    {
+      "factor": "Invariance to Monotone Transformations",
+      "explanation": "Decision trees only care about feature ordering, not numeric scale or distribution skew. Neural nets are hypersensitive to outliers, scale differences, and heavy-tailed distributions."
+    },
+    {
+      "factor": "Mixed Data Types & Cardinality",
+      "explanation": "Tabular datasets blend continuous, high-cardinality nominal, and ordinal features. Tree splitters evaluate each column independently without suffering from the curse of dimensionality across heterogeneous representations."
+    },
+    {
+      "factor": "Native Handling of Missing Values",
+      "explanation": "Modern tree algorithms (LightGBM/XGBoost/HistGradientBoosting) assign missing values to optimal split directions dynamically without arbitrary imputation distortion."
+    }
+  ]
+}

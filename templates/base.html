@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}PlacementPredict — ML System Lifecycle Dashboard{% endblock %}</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- Top Navigation Bar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="{{ url_for('dashboard') }}" class="brand-logo">
+                <div class="logo-icon"><i class="fa-solid fa-graduation-cap"></i></div>
+                <div class="brand-text">
+                    <span class="brand-title">PlacementPredict</span>
+                    <span class="brand-sub">ML System Lifecycle Engine</span>
+                </div>
+            </a>
+
+            <div class="nav-links">
+                <a href="{{ url_for('dashboard') }}" class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}">
+                    <i class="fa-solid fa-chart-pie"></i> System Dashboard
+                </a>
+                <a href="{{ url_for('predict_page') }}" class="nav-link {% if request.endpoint == 'predict_page' %}active{% endif %}">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Live Prediction Studio
+                </a>
+                <a href="{{ url_for('lifecycle_page') }}" class="nav-link {% if request.endpoint == 'lifecycle_page' %}active{% endif %}">
+                    <i class="fa-solid fa-diagram-project"></i> ML Architecture (M1-M6)
+                </a>
+            </div>
+
+            <div class="nav-status">
+                <span class="status-badge live-status"><span class="pulse-dot"></span> Serving v1.0</span>
+                <span class="status-badge calib-status"><i class="fa-solid fa-certificate"></i> Calibrated</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Body -->
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-col">
+                <div class="footer-brand"><i class="fa-solid fa-graduation-cap"></i> PlacementPredict ML System</div>
+                <p>End-to-End Classical Machine Learning & Production ML Engineering. Covering M1 through M6 ML System Lifecycle.</p>
+            </div>
+            <div class="footer-col">
+                <h4>System Architecture</h4>
+                <ul>
+                    <li><i class="fa-solid fa-database"></i> 50,000 Verified Student Records</li>
+                    <li><i class="fa-solid fa-cogs"></i> Skew-Free Preprocessing Pipeline</li>
+                    <li><i class="fa-solid fa-bolt"></i> Sub-millisecond Inference & Platt Calibration</li>
+                    <li><i class="fa-solid fa-shield-halved"></i> Automated Data Drift (PSI / KS) Monitoring</li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Course Curriculum Scope</h4>
+                <p class="text-muted">Classical ML & ML Engineering (M1-M6) &bull; Deep Learning (DLAC) &bull; Generative Models (GALE) &bull; LLMs (NLPL)</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <span>&copy; 2026 PlacementPredict System &bull; Production ML Engineering</span>
+        </div>
+    </footer>
+
+    <!-- Main JavaScript -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

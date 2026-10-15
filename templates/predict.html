@@ -1,0 +1,262 @@
+{% extends "base.html" %}
+
+{% block title %}Live Prediction Studio — PlacementPredict{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <div class="header-left">
+        <h1 class="page-title">Interactive Live Prediction Studio</h1>
+        <p class="page-subtitle">Submit candidate profiles to execute the end-to-end inference pipeline: Validation &bull; Feature Transformation &bull; Calibrated Classification &bull; Salary Regression &bull; Telemetry</p>
+    </div>
+    <div class="header-actions">
+        <button type="button" class="btn btn-outline" onclick="loadSamplePreset('elite')"><i class="fa-solid fa-star text-amber"></i> Preset: Elite CS</button>
+        <button type="button" class="btn btn-outline" onclick="loadSamplePreset('borderline')"><i class="fa-solid fa-scale-balanced text-primary"></i> Preset: Borderline</button>
+        <button type="button" class="btn btn-outline" onclick="loadSamplePreset('anomaly')"><i class="fa-solid fa-triangle-exclamation text-danger"></i> Preset: Anomaly</button>
+    </div>
+</div>
+
+<div class="grid-2col-predict">
+    <!-- Left Column: Input Form -->
+    <div class="section-card">
+        <div class="card-header-flex">
+            <h2 class="card-title"><i class="fa-solid fa-id-card-clip text-primary"></i> Student Candidate Profile</h2>
+            <span class="badge badge-info">14 Supervised Attributes</span>
+        </div>
+
+        <form method="POST" action="{{ url_for('predict_page') }}" id="predictionForm" class="mt-3">
+            <div class="form-grid">
+                <!-- CGPA -->
+                <div class="form-group">
+                    <label for="cgpa"><i class="fa-solid fa-award"></i> CGPA (5.0 - 10.0)</label>
+                    <input type="number" step="0.01" min="5.0" max="10.0" id="cgpa" name="cgpa" class="form-control" value="{{ form_data.cgpa if form_data else 8.4 }}" required>
+                </div>
+
+                <!-- IQ -->
+                <div class="form-group">
+                    <label for="iq"><i class="fa-solid fa-brain"></i> Cognitive IQ (80 - 145)</label>
+                    <input type="number" min="80" max="145" id="iq" name="iq" class="form-control" value="{{ form_data.iq if form_data else 115 }}" required>
+                </div>
+
+                <!-- Coding Skills Score -->
+                <div class="form-group">
+                    <label for="coding_skills_score"><i class="fa-solid fa-code"></i> Coding Skills Score (0 - 100)</label>
+                    <input type="number" step="0.1" min="0" max="100" id="coding_skills_score" name="coding_skills_score" class="form-control" value="{{ form_data.coding_skills_score if form_data else 82.5 }}" required>
+                </div>
+
+                <!-- Internships Count -->
+                <div class="form-group">
+                    <label for="internships_count"><i class="fa-solid fa-briefcase"></i> Internships Completed</label>
+                    <input type="number" min="0" max="10" id="internships_count" name="internships_count" class="form-control" value="{{ form_data.internships_count if form_data else 2 }}">
+                    <small class="form-text text-muted">Leave empty to test MissingIndicator</small>
+                </div>
+
+                <!-- Projects Count -->
+                <div class="form-group">
+                    <label for="projects_count"><i class="fa-solid fa-diagram-project"></i> Major Projects</label>
+                    <input type="number" min="0" max="10" id="projects_count" name="projects_count" class="form-control" value="{{ form_data.projects_count if form_data else 3 }}" required>
+                </div>
+
+                <!-- Hackathons Attended -->
+                <div class="form-group">
+                    <label for="hackathons_attended"><i class="fa-solid fa-laptop-code"></i> Hackathons Attended</label>
+                    <input type="number" min="0" max="10" id="hackathons_attended" name="hackathons_attended" class="form-control" value="{{ form_data.hackathons_attended if form_data else 2 }}" required>
+                </div>
+
+                <!-- Soft Skills Score -->
+                <div class="form-group">
+                    <label for="soft_skills_score"><i class="fa-solid fa-comments"></i> Soft Skills Score (0 - 100)</label>
+                    <input type="number" step="0.1" min="0" max="100" id="soft_skills_score" name="soft_skills_score" class="form-control" value="{{ form_data.soft_skills_score if form_data else 78.0 }}">
+                </div>
+
+                <!-- Backlogs -->
+                <div class="form-group">
+                    <label for="backlogs"><i class="fa-solid fa-circle-exclamation"></i> History of Backlogs</label>
+                    <input type="number" min="0" max="10" id="backlogs" name="backlogs" class="form-control" value="{{ form_data.backlogs if form_data else 0 }}" required>
+                </div>
+
+                <!-- 10th Percentage -->
+                <div class="form-group">
+                    <label for="academic_percentage_10th"><i class="fa-solid fa-percent"></i> 10th Standard (%)</label>
+                    <input type="number" step="0.1" min="40" max="100" id="academic_percentage_10th" name="academic_percentage_10th" class="form-control" value="{{ form_data.academic_percentage_10th if form_data else 88.0 }}" required>
+                </div>
+
+                <!-- 12th Percentage -->
+                <div class="form-group">
+                    <label for="academic_percentage_12th"><i class="fa-solid fa-percent"></i> 12th Standard (%)</label>
+                    <input type="number" step="0.1" min="40" max="100" id="academic_percentage_12th" name="academic_percentage_12th" class="form-control" value="{{ form_data.academic_percentage_12th if form_data else 85.5 }}">
+                </div>
+
+                <!-- Stream -->
+                <div class="form-group">
+                    <label for="stream"><i class="fa-solid fa-graduation-cap"></i> Academic Stream</label>
+                    <select id="stream" name="stream" class="form-control">
+                        <option value="Computer Science" selected>Computer Science</option>
+                        <option value="Information Technology">Information Technology</option>
+                        <option value="Electronics & Comm">Electronics & Comm</option>
+                        <option value="Mechanical">Mechanical</option>
+                        <option value="Civil">Civil</option>
+                        <option value="Electrical">Electrical</option>
+                    </select>
+                </div>
+
+                <!-- College Tier -->
+                <div class="form-group">
+                    <label for="college_tier"><i class="fa-solid fa-building-columns"></i> College Tier</label>
+                    <select id="college_tier" name="college_tier" class="form-control">
+                        <option value="Tier 1">Tier 1 (Top National)</option>
+                        <option value="Tier 2" selected>Tier 2 (Regional Leading)</option>
+                        <option value="Tier 3">Tier 3 (Affiliated)</option>
+                    </select>
+                </div>
+
+                <!-- Gender -->
+                <div class="form-group">
+                    <label for="gender"><i class="fa-solid fa-user"></i> Gender</label>
+                    <select id="gender" name="gender" class="form-control">
+                        <option value="Male" selected>Male</option>
+                        <option value="Female">Female</option>
+                    </select>
+                </div>
+
+                <!-- Extracurriculars -->
+                <div class="form-group">
+                    <label for="extracurricular_activities"><i class="fa-solid fa-futbol"></i> Extracurriculars</label>
+                    <select id="extracurricular_activities" name="extracurricular_activities" class="form-control">
+                        <option value="Yes" selected>Yes</option>
+                        <option value="No">No</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-actions mt-4">
+                <button type="submit" class="btn btn-primary btn-block"><i class="fa-solid fa-bolt"></i> Execute End-to-End Prediction</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Right Column: Prediction Output & Tracing -->
+    <div class="section-card">
+        <div class="card-header-flex">
+            <h2 class="card-title"><i class="fa-solid fa-square-poll-vertical text-primary"></i> Inference Result & Trace</h2>
+            {% if prediction %}
+            <span class="badge badge-success"><i class="fa-solid fa-stopwatch"></i> {{ prediction.latency_ms }} ms</span>
+            {% else %}
+            <span class="badge badge-outline">Ready for Execution</span>
+            {% endif %}
+        </div>
+
+        {% if prediction %}
+            {% if prediction.error %}
+            <div class="callout callout-danger mt-3">
+                <strong>Inference Error:</strong> {{ prediction.error }}
+            </div>
+            {% else %}
+            <!-- Outcome Card -->
+            <div class="prediction-hero-card mt-3 {% if prediction.placement_status == 1 %}outcome-placed{% else %}outcome-unplaced{% endif %}">
+                <div class="outcome-header">
+                    <div class="outcome-icon">
+                        {% if prediction.placement_status == 1 %}
+                        <i class="fa-solid fa-circle-check"></i>
+                        {% else %}
+                        <i class="fa-solid fa-circle-xmark"></i>
+                        {% endif %}
+                    </div>
+                    <div class="outcome-titles">
+                        <span class="outcome-status">
+                            {% if prediction.placement_status == 1 %}HIGH PROBABILITY PLACED{% else %}AT RISK / NOT PLACED{% endif %}
+                        </span>
+                        <span class="outcome-desc">
+                            {% if prediction.placement_status == 1 %}
+                            Candidate meets recruitment competency thresholds.
+                            {% else %}
+                            Candidate requires skill enhancement or backlog clearance.
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="outcome-metrics-grid mt-3">
+                    <div class="outcome-stat">
+                        <span class="stat-name">Calibrated Probability</span>
+                        <span class="stat-big">{{ prediction.probability }}%</span>
+                        <div class="prob-progress-bar">
+                            <div class="prob-progress-fill" style="width: {{ prediction.probability }}%;"></div>
+                        </div>
+                    </div>
+
+                    <div class="outcome-stat">
+                        <span class="stat-name">Estimated Package</span>
+                        <span class="stat-big">
+                            {% if prediction.placement_status == 1 %}
+                            {{ prediction.salary_package_lpa }} <span class="stat-unit">LPA</span>
+                            {% else %}
+                            0.0 <span class="stat-unit">LPA</span>
+                            {% endif %}
+                        </span>
+                        <span class="stat-sub">Ridge Regressor</span>
+                    </div>
+
+                    <div class="outcome-stat">
+                        <span class="stat-name">Profile Anomaly</span>
+                        <span class="stat-big">
+                            {% if prediction.is_anomaly %}
+                            <span class="text-danger"><i class="fa-solid fa-triangle-exclamation"></i> Outlier</span>
+                            {% else %}
+                            <span class="text-success"><i class="fa-solid fa-check"></i> Normal</span>
+                            {% endif %}
+                        </span>
+                        <span class="stat-sub">Isolation Forest</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trace Timeline -->
+            <div class="subcard mt-4">
+                <h3 class="subcard-title"><i class="fa-solid fa-route text-primary"></i> Tracing Prediction End-to-End (M1 Lifecycle)</h3>
+                <p class="subcard-desc">Visualizing each lifecycle boundary in real time:</p>
+                <div class="trace-timeline mt-3">
+                    {% for step in trace_steps %}
+                    <div class="trace-item">
+                        <div class="trace-dot dot-{{ step.status }}"></div>
+                        <div class="trace-content">
+                            <span class="trace-step-name">{{ step.step }}</span>
+                            <span class="trace-detail">{{ step.detail }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        {% else %}
+        <!-- Placeholder State -->
+        <div class="placeholder-card mt-3">
+            <div class="placeholder-icon"><i class="fa-solid fa-hand-point-left"></i></div>
+            <h3>Awaiting Candidate Payload</h3>
+            <p>Select a preset above or input academic attributes to see calibrated inference, salary estimation, anomaly detection, and execution trace.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Batch Inference Section -->
+<div class="section-card mt-4">
+    <div class="card-header-flex">
+        <div>
+            <h2 class="card-title"><i class="fa-solid fa-layer-group text-primary"></i> High-Throughput Batch Prediction Studio</h2>
+            <p class="card-subtitle">Execute vectorized batch inference over thousands of candidates simultaneously (M1 Online vs Batch Prediction).</p>
+        </div>
+        <button id="runSampleBatchBtn" class="btn btn-secondary"><i class="fa-solid fa-play"></i> Run 100-Sample Test Batch</button>
+    </div>
+
+    <div id="batchResultsContainer" class="mt-3" style="display: none;">
+        <div class="stat-box">
+            <div class="grid-4col text-center">
+                <div>Processed: <strong id="batchProcessed">0</strong></div>
+                <div>Batch Latency: <strong id="batchLatency">0 ms</strong></div>
+                <div>Per-sample Latency: <strong id="batchPerSample">0 ms</strong></div>
+                <div>Placed Count: <strong id="batchPlaced" class="text-success">0</strong></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
